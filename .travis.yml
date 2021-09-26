@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t bbortner/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true bbortner/react-test npm test
+
+after_success:
+  - docker build -t bbortner/multi-client ./client
+  - docker build -t bbortner/multi-nginx ./nginx
+  - docker build -t bbortner/multi-server ./server
+  - docker build -t bbortner/multi-worker ./worker
+  # Login to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to Docker Hub
+  - docker push bbortner/multi-client
+  - docker push bbortner/multi-nginx
+  - docker push bbortner/multi-server
+  - docker push bbortner/multi-worker
